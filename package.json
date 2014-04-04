@@ -1,0 +1,14 @@
+{
+  "name": "monkeeCreate",
+  "version": "3.0.0",
+  "private": true,
+  "dependencies": {
+    "gulp": "latest",
+    "gulp-ruby-sass": "latest",
+    "gulp-concat": "latest",
+    "gulp-uglify": "latest",
+    "gulp-jshint": "latest",
+    "gulp-rename": "latest",
+    "gulp-notify": "latest"
+  }
+}
