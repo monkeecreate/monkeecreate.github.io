@@ -9,7 +9,7 @@ var sass = require('gulp-ruby-sass'),
 
 var paths = {
   styles: 'css/app.scss',
-  scripts: ['js/jquery-2.1.0.js', 'js/skel.min.js', 'js/init.js', 'js/scrollblur.js']
+  scripts: ['js/jquery-2.1.0.js', 'js/skel.min.js', 'js/init.js']
 };
 
 // gulp.task('styles', function () {
