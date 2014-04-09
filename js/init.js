@@ -79,3 +79,21 @@
 					$('form').n33_formerize();
 
 		});
+
+/*********************************************************************************/
+/* Github API                                                                    */
+/*********************************************************************************/
+
+// Testing with simpleWeather.
+// TODO: Convert into a plugin to use for all the projects.
+$.ajax({
+	url: 'https://api.github.com/repos/monkeecreate/jquery.simpleWeather',
+	dataType: 'jsonp',
+	success: function(results) {
+		var repo = results.data;
+
+		var simpleWeather = $('.js-simpleWeather');
+		$('.stars', simpleWeather).html(repo.stargazers_count);
+		$('.forks', simpleWeather).html(repo.forks_count);
+	}
+});
