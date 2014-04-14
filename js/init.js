@@ -86,14 +86,19 @@
 
 // Testing with simpleWeather.
 // TODO: Convert into a plugin to use for all the projects.
-$.ajax({
-	url: 'https://api.github.com/repos/monkeecreate/jquery.simpleWeather',
-	dataType: 'jsonp',
-	success: function(results) {
-		var repo = results.data;
+jQuery(function() {
+	$('.js-simpleGH').each(function() {
+		var el = $(this);
+		var repo = el.data('repo'); //monkeecreate/jquery.simpleWeather
 
-		var simpleWeather = $('.js-simpleWeather');
-		$('.stars', simpleWeather).html(repo.stargazers_count);
-		$('.forks', simpleWeather).html(repo.forks_count);
-	}
+		$.ajax({
+			url: 'https://api.github.com/repos/'+repo,
+			dataType: 'jsonp',
+			success: function(results) {
+				var data = results.data;
+
+				$('.project-meta', el).prepend('<i class="fa fa-star"></i> <span class="stars">'+data.stargazers_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;<i class="fa fa-code-fork"></i> <span class="forks">'+data.forks_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;');
+			}
+		});
+	});
 });
