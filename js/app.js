@@ -9150,6 +9150,82 @@ function(a,d){if("string"==typeof a)return a.indexOf(d);var c;c=d?d:0;var e;if(!
 b);d&&a.iterate(d,function(a){window["_skel_"+a+"_config"]=d[a]});a.initConfig();a.registerLocation("html",document.getElementsByTagName("html")[0]);a.registerLocation("head",document.getElementsByTagName("head")[0]);a.DOMReady(function(){a.registerLocation("body",document.getElementsByTagName("body")[0])});a.initEvents();a.poll();a.iterate(a.plugins,function(b){a.initPluginConfig(b,a.plugins[b]);a.plugins[b].init()});a.isInit=!0},preInit:function(){var b=document.getElementsByTagName("script");a.me=
 b[b.length-1];if(window._skel_config)a.isConfigured=!0;else if(s=document.getElementsByTagName("script"),s=s[s.length-1].innerHTML.replace(/^\s+|\s+$/g,""))a.isConfigured=!0;a.isConfigured&&a.init()}};a.preInit();return a}();
 
+// github.com/paulirish/jquery-ajax-localstorage-cache
+// dependent on Modernizr's localStorage test
+
+$.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+
+  // Modernizr.localstorage, version 3 12/12/13
+  function hasLocalStorage() {
+    var mod = 'modernizr';
+    try {
+      localStorage.setItem(mod, mod);
+      localStorage.removeItem(mod);
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  // Cache it ?
+  if ( !hasLocalStorage() || !options.localCache ) return;
+
+  var hourstl = options.cacheTTL || 5;
+
+  var cacheKey = options.cacheKey ||
+                 options.url.replace( /jQuery.*/,'' ) + options.type + (options.data || '');
+
+  // isCacheValid is a function to validate cache
+  if ( options.isCacheValid &&  ! options.isCacheValid() ){
+    localStorage.removeItem( cacheKey );
+  }
+  // if there's a TTL that's expired, flush this item
+  var ttl = localStorage.getItem(cacheKey + 'cachettl');
+  if ( ttl && ttl < +new Date() ){
+    localStorage.removeItem( cacheKey );
+    localStorage.removeItem( cacheKey  + 'cachettl' );
+    ttl = 'expired';
+  }
+
+  var value = localStorage.getItem( cacheKey );
+  if ( value ){
+    //In the cache? So get it, apply success callback & abort the XHR request
+    // parse back to JSON if we can.
+    if ( options.dataType.indexOf( 'json' ) === 0 ) value = JSON.parse( value );
+    options.success( value );
+    // Abort is broken on JQ 1.5 :(
+    jqXHR.abort();
+  } else {
+
+    //If it not in the cache, we change the success callback, just put data on localstorage and after that apply the initial callback
+    if ( options.success ) {
+      options.realsuccess = options.success;
+    }
+    options.success = function( data ) {
+      var strdata = data;
+      if ( this.dataType.indexOf( 'json' ) === 0 ) strdata = JSON.stringify( data );
+
+      // Save the data to localStorage catching exceptions (possibly QUOTA_EXCEEDED_ERR)
+      try {
+        localStorage.setItem( cacheKey, strdata );
+      } catch (e) {
+        // Remove any incomplete data that may have been saved before the exception was caught
+        localStorage.removeItem( cacheKey );
+        localStorage.removeItem( cacheKey + 'cachettl' );
+        if ( options.cacheError ) options.cacheError( e, cacheKey, strdata );
+      }
+
+      if ( options.realsuccess ) options.realsuccess( data );
+    };
+
+    // store timestamp
+    if ( ! ttl || ttl === 'expired' ) {
+      localStorage.setItem( cacheKey  + 'cachettl', +new Date() + 1000 * 60 * 60 * hourstl );
+    }
+
+  }
+});
+
 /*
 	Tessellate 1.0 by HTML5 UP
 	html5up.net | @n33co
@@ -9236,21 +9312,39 @@ b[b.length-1];if(window._skel_config)a.isConfigured=!0;else if(s=document.getEle
 /* Github API                                                                    */
 /*********************************************************************************/
 
-// Testing with simpleWeather.
-// TODO: Convert into a plugin to use for all the projects.
 jQuery(function() {
 	$('.js-simpleGH').each(function() {
 		var el = $(this);
 		var repo = el.data('repo'); //monkeecreate/jquery.simpleWeather
 
-		$.ajax({
-			url: 'https://api.github.com/repos/'+repo,
-			dataType: 'jsonp',
-			success: function(results) {
-				var data = results.data;
+		$.when(
+			$.ajax({
+				url: 'https://api.github.com/repos/'+repo,
+				dataType: 'jsonp'
+				// localCache: true,
+				// cacheTTL: 5
+			}),
+			$.ajax({
+				url: 'https://api.github.com/repos/'+repo+'/tags',
+				dataType: 'jsonp'
+				// localCache: true,
+				// cacheTTL: 5
+			})
+		).done(function(repoData, repoTags) {
+			var data = repoData[0].data;
+			var tag = repoTags[0].data[0];
+			var html = '';
 
-				$('.project-meta', el).prepend('<i class="fa fa-star"></i> <span class="stars">'+data.stargazers_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;<i class="fa fa-code-fork"></i> <span class="forks">'+data.forks_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;');
-			}
+			if(tag)
+				html += '<i class="fa fa-rocket"></i> <span class="release">'+tag.name+'</span>&nbsp;&nbsp;&nbsp;&nbsp;';
+
+			if(data.stargazers_count)
+				html += '<i class="fa fa-star"></i> <span class="stars">'+data.stargazers_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;';
+
+			if(data.forks_count)
+				html += '<i class="fa fa-code-fork"></i> <span class="forks">'+data.forks_count+'</span>&nbsp;&nbsp;&nbsp;&nbsp;';
+
+			$('.project-meta', el).prepend(html);
 		});
 	});
 });
