@@ -93,14 +93,10 @@ jQuery(function() {
 			$.ajax({
 				url: 'https://api.github.com/repos/'+repo,
 				dataType: 'jsonp'
-				// localCache: true,
-				// cacheTTL: 5
 			}),
 			$.ajax({
 				url: 'https://api.github.com/repos/'+repo+'/tags',
 				dataType: 'jsonp'
-				// localCache: true,
-				// cacheTTL: 5
 			})
 		).done(function(repoData, repoTags) {
 			var data = repoData[0].data;
